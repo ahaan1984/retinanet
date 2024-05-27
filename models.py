@@ -1,14 +1,13 @@
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision.models as models
 import torchvision.ops as ops
 
 class ResNet(nn.Module):
     def __init__(self) -> None:
         super(ResNet, self).__init__()
-        net = models.resnet50(pretrained=True)
+        net = models.resnet18(pretrained=True)
         self.net = nn.Sequential(*list(net.children())[:-2])
-        self.out_channels = [256, 512, 1024, 2048]
+        self.out_channels = [64, 128, 256, 512]
     
     def forward(self, x:int) -> list:       
         c2:int = self.net[4](x)
@@ -57,7 +56,7 @@ class RetinaNet(nn.Module):
         self.classification_subnet = Subnet(256, self.num_anchors, num_classes)
         self.regression_subnet = Subnet(256, self.num_anchors, 4)
 
-    def forward(self, x):
+    def forward(self, x) -> tuple:
         """
         TODO: 
         cls_out = self.classification_subnet(feature)
