@@ -1,1 +1,5 @@
 env/
+__pycache__/
+VOCtest_06-Nov-2007/
+VOCtrainval_06-Nov-2007/
+wandb/
