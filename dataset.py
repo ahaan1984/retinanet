@@ -1,4 +1,3 @@
-import sys
 import os
 import torch
 import numpy as np
@@ -15,9 +14,10 @@ class CocoDataset(Dataset):
     def __init__(self, root, set_name='train2017', transform=None):
         self.root = root
         self.set_name = set_name
+        self.transform = transform
         self.coco = COCO(os.path.join(self.root, 'annotations', 'instances_' + self.set_name + '.json'))
         self.ids = self.coco.getImgIds()
-        self.transform = transform
+        self.load_classes()
 
     def load_classes(self):
         categories = self.coco.loadCats(self.coco.getCatIds())
@@ -33,8 +33,8 @@ class CocoDataset(Dataset):
             self.classes[c['name']] = len(self.classes)
 
     def load_image(self, image_idx):
-        image_info = self.coco.loadImgs(self.image_ids[image_idx])[0]
-        path = os.path.join(self.root_dir, 'images', self.set_name, image_info['file_name'])
+        image_info = self.coco.loadImgs(self.ids[image_idx])[0]
+        path = os.path.join(self.root, 'images', self.set_name, image_info['file_name'])
         image = cv2.imread(path)
         if len(image.shape) == 2:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -45,7 +45,7 @@ class CocoDataset(Dataset):
     
     def load_annotations(self, image_index):
         # get ground truth annotations
-        annotations_ids = self.coco.getAnnIds(imgIds=self.image_ids[image_index], iscrowd=False)
+        annotations_ids = self.coco.getAnnIds(imgIds=self.ids[image_index], iscrowd=False)
         annotations     = np.zeros((0, 5))
         if len(annotations_ids) == 0:
             return annotations
@@ -85,7 +85,7 @@ class CocoDataset(Dataset):
         return self.coco_labels[label]
 
     def image_aspect_ratio(self, image_index):
-        image = self.coco.loadImgs(self.image_ids[image_index])[0]
+        image = self.coco.loadImgs(self.ids[image_index])[0]
         return float(image['width']) / float(image['height'])
 
     def num_classes(self):
