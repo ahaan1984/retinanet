@@ -2,16 +2,14 @@ import numpy as np
 import torch 
 import torch.nn as nn
 
-
-def generate_anchors(base=16, ratios=None, scales=None):
+def generate_anchors(base_size=16, ratios=None, scales=None):
     if ratios is None:
         ratios = np.array([0.5, 1, 2])
     if scales is None:
-        scales = np.array([2**0, 2**(1.0/3.0), 2**(2.0/3.0)])
-        
-    num_anchors = len(ratios)*len(scales)
+        scales = np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)])
+    num_anchors = len(ratios) * len(scales)
     anchors = np.zeros((num_anchors, 4))
-    anchors[:, 2] = base * np.tile(scales, (2, len(ratios))).T
+    anchors[:, 2:] = base_size * np.tile(scales, (2, len(ratios))).T
     areas = anchors[:, 2] * anchors[:, 3]
     anchors[:, 2] = np.sqrt(areas / np.repeat(ratios, len(scales)))
     anchors[:, 3] = anchors[:, 2] * np.repeat(ratios, len(scales))
@@ -33,7 +31,6 @@ def anchors_for_shape(
     scales=None,
     strides=None,
     sizes=None,
-    shapes_callback=None,
 ):
 
     image_shapes = compute_shape(image_shape, pyramid_levels)
@@ -45,7 +42,6 @@ def anchors_for_shape(
         all_anchors     = np.append(all_anchors, shifted_anchors, axis=0)
 
     return all_anchors
-
 
 def shift(shape, stride, anchors):
     shift_x = (np.arange(0, shape[1]) + 0.5) * stride
@@ -85,13 +81,12 @@ class Anchors(nn.Module):
         image_shape = np.array(image_shape)
         image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
 
-        anchors_all = np.zeros((0, 4), dtype=np.float32)
+        anchors_all = np.zeros((0, 4)).astype(np.float32)
 
         for idx, p in enumerate(self.pyramid_levels):
-            anchors = generate_anchors(base=self.sizes[idx], ratios=self.ratios, scales=self.scales)
+            anchors = generate_anchors(base_size=self.sizes[idx], ratios=self.ratios, scales=self.scales)
             shifted_anchors = shift(image_shapes[idx], self.strides[idx], anchors)
             anchors_all = np.append(anchors_all, shifted_anchors, axis=0)
-
         anchors_all = np.expand_dims(anchors_all, axis=0)
 
         return torch.from_numpy(anchors_all.astype(np.float32)) 

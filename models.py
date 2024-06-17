@@ -1,6 +1,5 @@
 import math
 import torch
-import torchvision.models as models
 import torch.utils.model_zoo as model_zoo
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,29 +18,24 @@ class FeaturePyramidNetwork(nn.Module):
     def __init__(self, C3_size, C4_size, C5_size, feature_size=256):
         super(FeaturePyramidNetwork, self).__init__()
 
-        # upsample C5 to get P5 from the FPN paper
         self.P5_1 = nn.Conv2d(C5_size, feature_size, kernel_size=1, stride=1, padding=0)
         self.P5_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
         self.P5_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
 
-        # add P5 elementwise to C4
         self.P4_1 = nn.Conv2d(C4_size, feature_size, kernel_size=1, stride=1, padding=0)
         self.P4_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
         self.P4_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
-
-        # add P4 elementwise to C3
+        
         self.P3_1 = nn.Conv2d(C3_size, feature_size, kernel_size=1, stride=1, padding=0)
         self.P3_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
-
-        # "P6 is obtained via a 3x3 stride-2 conv on C5"
+        
         self.P6 = nn.Conv2d(C5_size, feature_size, kernel_size=3, stride=2, padding=1)
-
-        # "P7 is computed by applying ReLU followed by a 3x3 stride-2 conv on P6"
+        
         self.P7_1 = nn.ReLU()
         self.P7_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=2, padding=1)
 
-    def forward(self, inputs):
-        C3, C4, C5 = inputs
+    def forward(self, x):
+        C3, C4, C5 = x
 
         P5_x = self.P5_1(C5)
         P5_upsampled_x = self.P5_upsampled(P5_x)
@@ -81,7 +75,6 @@ class ClassificationSubnet(nn.Module):
         self.output_act = nn.Sigmoid()
 
     def forward(self, x):
-
         out = self.conv1(x)
         out = self.act1(out)
         out = self.conv2(out)
@@ -92,8 +85,8 @@ class ClassificationSubnet(nn.Module):
         out = self.act4(out)
         out = self.output(out)
         out = self.output_act(out)
-
         out1 = out.permute(0, 2, 3, 1)
+
         batch_size, width, height, channels = out1.shape
         out2 = out1.view(batch_size, width, height, self.num_anchors, self.num_classes)
         return out2.contiguous().view(x.shape[0], -1, self.num_classes)
@@ -126,7 +119,6 @@ class RegressionSubnet(nn.Module):
         return out.contiguous().view(out.shape[0], -1, 4)
     
 class ResNet(nn.Module):
-
     def __init__(self, num_classes, block, layers):
         self.inplanes = 64
         super(ResNet, self).__init__()
@@ -201,7 +193,6 @@ class ResNet(nn.Module):
                 layer.eval()
 
     def forward(self, inputs):
-
         if self.training:
             img_batch, annotations = inputs
         else:

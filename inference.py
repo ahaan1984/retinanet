@@ -77,9 +77,6 @@ def postprocess(cls_outputs, reg_outputs, anchors, score_threshold=0.05, nms_thr
     return all_detections
 
 def perform_inference(model, dataloader, device, score_threshold=0.05, nms_threshold=0.5):
-    """
-    Perform inference on the model.
-    """
     model.to(device)
     model.eval()
     detections = []
