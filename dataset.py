@@ -3,53 +3,58 @@ import torch
 import numpy as np
 import random 
 
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
+
+import skimage.io
+import skimage.transform
+import skimage.color
+import skimage
 
 from pycocotools.coco import COCO
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, root, set_name='train2017', transform=None):
+    def __init__(self, root, set_name='train2017', transform=None, fraction=1.0):
         self.root = root
         self.set_name = set_name
         self.transform = transform
-        self.coco = COCO(os.path.join(self.root, 'annotations', 'instances_' + self.set_name + '.json'))
+        self.coco = COCO(os.path.join(self.root, 'labels', 'train.json'))
         self.ids = self.coco.getImgIds()
+    
         self.load_classes()
 
     def load_classes(self):
+        # load class names (name -> label)
         categories = self.coco.loadCats(self.coco.getCatIds())
         categories.sort(key=lambda x: x['id'])
 
-        self.classes = {}
-        self.coco_labels = {}
+        self.classes             = {}
+        self.coco_labels         = {}
         self.coco_labels_inv = {}
-
         for c in categories:
             self.coco_labels[len(self.classes)] = c['id']
             self.coco_labels_inv[c['id']] = len(self.classes)
             self.classes[c['name']] = len(self.classes)
+        # also load the reverse (label -> name)
+        self.labels = {}
+        for key, value in self.classes.items():
+            self.labels[value] = key
 
-    def load_image(self, image_idx):
-        image_info = self.coco.loadImgs(self.ids[image_idx])[0]
-        path = os.path.join(self.root, 'images', self.set_name, image_info['file_name'])
-        image = cv2.imread(path)
-        if len(image.shape) == 2:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        else:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    def load_image(self, image_index):
+        image_info = self.coco.loadImgs(self.ids[image_index])[0]
+        path       = os.path.join(self.root, 'images', image_info['file_name'])
+        img = skimage.io.imread(path)
+        if len(img.shape) == 2:
+            img = skimage.color.gray2rgb(img)
+        return img.astype(np.float32)/255.0
 
-        return image.astype(np.float32)/255.0
-    
     def load_annotations(self, image_index):
         # get ground truth annotations
         annotations_ids = self.coco.getAnnIds(imgIds=self.ids[image_index], iscrowd=False)
         annotations     = np.zeros((0, 5))
         if len(annotations_ids) == 0:
             return annotations
-
         coco_annotations = self.coco.loadAnns(annotations_ids)
         for idx, a in enumerate(coco_annotations):
             if a['bbox'][2] < 1 or a['bbox'][3] < 1:
@@ -58,21 +63,23 @@ class CocoDataset(Dataset):
             annotation[0, :4] = a['bbox']
             annotation[0, 4]  = self.coco_label_to_label(a['category_id'])
             annotations       = np.append(annotations, annotation, axis=0)
+
+        # transform from [x, y, w, h] to [x1, y1, x2, y2]
         annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
         annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
 
         return annotations
 
-
     def __getitem__(self, idx):
         image = self.load_image(idx)
         annot = self.load_annotations(idx)
         sample = {
-            'image': image,
-            'annotation': annot
+            'img': image,
+            'annot': annot
             }
         if self.transform:
-            sample = self.transform
+            sample = self.transform(sample)
+
         return sample
 
     def __len__(self):
@@ -114,6 +121,7 @@ def collater(data):
         annot_padded = torch.ones((len(annots), max_num_annots, 5)) * -1
         if max_num_annots > 0:
             for idx, annot in enumerate(annots):
+                #print (annot.shape)
                 if annot.shape[0] > 0:
                     annot_padded[idx, :annot.shape[0], :] = annot
     else:
@@ -134,7 +142,7 @@ class Resizer(object):
         if largest_side * scale > max_side:
             scale = max_side / largest_side
 
-        image = cv2.resize(image, (int(round(cols*scale)), int(round(rows*scale))))
+        image = skimage.transform.resize(image, (int(round(rows*scale)), int(round((cols*scale)))))
         rows, cols, cns = image.shape
         pad_w = 32 - rows%32
         pad_h = 32 - cols%32
@@ -147,18 +155,13 @@ class Resizer(object):
 
 class Augmenter(object):
     def __call__(self, sample, flip_x=0.5):
-
         if np.random.rand() < flip_x:
             image, annots = sample['img'], sample['annot']
             image = image[:, ::-1, :]
-
             rows, cols, channels = image.shape
-
             x1 = annots[:, 0].copy()
             x2 = annots[:, 2].copy()
-            
             x_tmp = x1.copy()
-
             annots[:, 0] = cols - x2
             annots[:, 2] = cols - x_tmp
             sample = {'img': image, 'annot': annots}
