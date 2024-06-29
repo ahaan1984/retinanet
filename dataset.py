@@ -6,29 +6,21 @@ import random
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
 
-import skimage.io
-import skimage.transform
-import skimage.color
-import skimage
-
 from pycocotools.coco import COCO
 import cv2
-
 class CocoDataset(Dataset):
-    def __init__(self, root, set_name='train2017', transform=None, fraction=1.0):
+    def __init__(self, root, set_name='train2017', transform=None):
         self.root = root
         self.set_name = set_name
         self.transform = transform
-        self.coco = COCO(os.path.join(self.root, 'labels', 'train.json'))
+        self.coco = COCO(os.path.join(self.root, 'annotations', f'instances_{self.set_name}.json'))
         self.ids = self.coco.getImgIds()
     
         self.load_classes()
 
     def load_classes(self):
-        # load class names (name -> label)
         categories = self.coco.loadCats(self.coco.getCatIds())
         categories.sort(key=lambda x: x['id'])
-
         self.classes             = {}
         self.coco_labels         = {}
         self.coco_labels_inv = {}
@@ -43,11 +35,16 @@ class CocoDataset(Dataset):
 
     def load_image(self, image_index):
         image_info = self.coco.loadImgs(self.ids[image_index])[0]
-        path       = os.path.join(self.root, 'images', image_info['file_name'])
-        img = skimage.io.imread(path)
+        path       = os.path.join(self.root, self.set_name, image_info['file_name'])
+        # img = skimage.io.imread(path)
+        # if len(img.shape) == 2:
+        #     img = skimage.color.gray2rgb(img)
+        # return img.astype(np.float32)/255.0
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if len(img.shape) == 2:
-            img = skimage.color.gray2rgb(img)
-        return img.astype(np.float32)/255.0
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        return img.astype(np.float32) / 255.0
 
     def load_annotations(self, image_index):
         # get ground truth annotations
@@ -142,7 +139,8 @@ class Resizer(object):
         if largest_side * scale > max_side:
             scale = max_side / largest_side
 
-        image = skimage.transform.resize(image, (int(round(rows*scale)), int(round((cols*scale)))))
+        image = cv2.resize(image, 
+                           (int(round(rows*scale)), int(round(cols*scale))), interpolation = cv2.INTER_AREA)
         rows, cols, cns = image.shape
         pad_w = 32 - rows%32
         pad_h = 32 - cols%32
