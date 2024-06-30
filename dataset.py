@@ -8,6 +8,7 @@ from torch.utils.data.sampler import Sampler
 
 from pycocotools.coco import COCO
 import cv2
+
 class CocoDataset(Dataset):
     def __init__(self, root, set_name='train2017', transform=None):
         self.root = root

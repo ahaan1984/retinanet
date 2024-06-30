@@ -2,6 +2,8 @@ import numpy as np
 import torch 
 import torch.nn as nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def generate_anchors(base_size=16, ratios=None, scales=None):
     if ratios is None:
         ratios = np.array([0.5, 1, 2])
@@ -89,17 +91,17 @@ class Anchors(nn.Module):
             anchors_all = np.append(anchors_all, shifted_anchors, axis=0)
         anchors_all = np.expand_dims(anchors_all, axis=0)
 
-        return torch.from_numpy(anchors_all.astype(np.float32)) 
+        return torch.from_numpy(anchors_all.astype(np.float32)).to(device) 
 
 class BoundingBoxTransform(nn.Module):
     def __init__(self, mean=None, std=None):
         super(BoundingBoxTransform, self).__init__()
         if mean is None:
-            self.mean = torch.from_numpy(np.array([0, 0, 0, 0]).astype(np.float32))
+            self.mean = torch.from_numpy(np.array([0, 0, 0, 0]).astype(np.float32)).to(device)
         else:
             self.mean = mean
         if std is None:
-            self.std = torch.from_numpy(np.array([0.1, 0.1, 0.2, 0.2]).astype(np.float32))
+            self.std = torch.from_numpy(np.array([0.1, 0.1, 0.2, 0.2]).astype(np.float32)).to(device)
         else:
             self.std = std
 

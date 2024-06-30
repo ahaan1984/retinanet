@@ -20,21 +20,21 @@ class FeaturePyramidNetwork(nn.Module):
     def __init__(self, C3_size, C4_size, C5_size, feature_size=256):
         super(FeaturePyramidNetwork, self).__init__()
 
-        self.P5_1 = nn.Conv2d(C5_size, feature_size, kernel_size=1, stride=1, padding=0).to(device)
-        self.P5_upsampled = nn.Upsample(scale_factor=2, mode='nearest').to(device)
-        self.P5_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1).to(device)
+        self.P5_1 = nn.Conv2d(C5_size, feature_size, kernel_size=1, stride=1, padding=0)
+        self.P5_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
+        self.P5_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
 
-        self.P4_1 = nn.Conv2d(C4_size, feature_size, kernel_size=1, stride=1, padding=0).to(device)
-        self.P4_upsampled = nn.Upsample(scale_factor=2, mode='nearest').to(device)
-        self.P4_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1).to(device)
+        self.P4_1 = nn.Conv2d(C4_size, feature_size, kernel_size=1, stride=1, padding=0)
+        self.P4_upsampled = nn.Upsample(scale_factor=2, mode='nearest')
+        self.P4_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
         
-        self.P3_1 = nn.Conv2d(C3_size, feature_size, kernel_size=1, stride=1, padding=0).to(device)
-        self.P3_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1).to(device)
+        self.P3_1 = nn.Conv2d(C3_size, feature_size, kernel_size=1, stride=1, padding=0)
+        self.P3_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=1, padding=1)
         
-        self.P6 = nn.Conv2d(C5_size, feature_size, kernel_size=3, stride=2, padding=1).to(device)
+        self.P6 = nn.Conv2d(C5_size, feature_size, kernel_size=3, stride=2, padding=1)
         
-        self.P7_1 = nn.ReLU(inplace=True).to(device)
-        self.P7_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=2, padding=1).to(device)
+        self.P7_1 = nn.ReLU(inplace=True)
+        self.P7_2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, stride=2, padding=1)
 
     def forward(self, x):
         C3, C4, C5 = x
@@ -65,16 +65,16 @@ class ClassificationSubnet(nn.Module):
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
-        self.conv1 = nn.Conv2d(num_features_in, feature_size, kernel_size=3, padding=1).to(device)
-        self.act1 = nn.ReLU().to(device)
-        self.conv2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act2 = nn.ReLU().to(device)
-        self.conv3 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act3 = nn.ReLU().to(device)
-        self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act4 = nn.ReLU().to(device)
-        self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1).to(device)
-        self.output_act = nn.Sigmoid().to(device)
+        self.conv1 = nn.Conv2d(num_features_in, feature_size, kernel_size=3, padding=1)
+        self.act1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act2 = nn.ReLU()
+        self.conv3 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act3 = nn.ReLU()
+        self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act4 = nn.ReLU()
+        self.output = nn.Conv2d(feature_size, num_anchors * num_classes, kernel_size=3, padding=1)
+        self.output_act = nn.Sigmoid()
 
     def forward(self, x):
         out = self.conv1(x)
@@ -96,15 +96,15 @@ class ClassificationSubnet(nn.Module):
 class RegressionSubnet(nn.Module):
     def __init__(self, num_features_in, num_anchors=9, feature_size=256):
         super(RegressionSubnet, self).__init__()
-        self.conv1 = nn.Conv2d(num_features_in, feature_size, kernel_size=3, padding=1).to(device)
-        self.act1 = nn.ReLU().to(device)
-        self.conv2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act2 = nn.ReLU().to(device)
-        self.conv3 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act3 = nn.ReLU().to(device)
-        self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1).to(device)
-        self.act4 = nn.ReLU().to(device)
-        self.output = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1).to(device)
+        self.conv1 = nn.Conv2d(num_features_in, feature_size, kernel_size=3, padding=1)
+        self.act1 = nn.ReLU()
+        self.conv2 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act2 = nn.ReLU()
+        self.conv3 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act3 = nn.ReLU()
+        self.conv4 = nn.Conv2d(feature_size, feature_size, kernel_size=3, padding=1)
+        self.act4 = nn.ReLU()
+        self.output = nn.Conv2d(feature_size, num_anchors * 4, kernel_size=3, padding=1)
 
     def forward(self, x):
         out = self.conv1(x)
@@ -124,14 +124,14 @@ class ResNet(nn.Module):
     def __init__(self, num_classes, block, layers):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False).to(device)
-        self.bn1 = nn.BatchNorm2d(64).to(device)
-        self.relu = nn.ReLU(inplace=True).to(device)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1).to(device)
-        self.layer1 = self._make_layer(block, 64, layers[0]).to(device)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2).to(device)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2).to(device)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2).to(device)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
         if block == BasicBlock:
             fpn_sizes = [self.layer2[layers[1] - 1].conv2.out_channels, self.layer3[layers[2] - 1].conv2.out_channels,
@@ -142,18 +142,18 @@ class ResNet(nn.Module):
         else:
             raise ValueError(f"Block type {block} not understood")
 
-        self.fpn = FeaturePyramidNetwork(fpn_sizes[0], fpn_sizes[1], fpn_sizes[2]).to(device)
+        self.fpn = FeaturePyramidNetwork(fpn_sizes[0], fpn_sizes[1], fpn_sizes[2])
 
-        self.regressionModel = RegressionSubnet(256).to(device)
-        self.classificationModel = ClassificationSubnet(256, num_classes=num_classes).to(device)
+        self.regressionModel = RegressionSubnet(256)
+        self.classificationModel = ClassificationSubnet(256, num_classes=num_classes)
 
-        self.anchors = Anchors().to(device)
+        self.anchors = Anchors()
 
-        self.regressBoxes = BoundingBoxTransform().to(device)
+        self.regressBoxes = BoundingBoxTransform()
 
-        self.clipBoxes = ClipBoxes().to(device)
+        self.clipBoxes = ClipBoxes()
 
-        self.focalLoss = FocalLoss().to(device)
+        self.focalLoss = FocalLoss()
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -251,7 +251,7 @@ class ResNet(nn.Module):
             return [finalScores, finalAnchorBoxesIndexes, finalAnchorBoxesCoordinates]
 
 def resnet18(num_classes, pretrained=True, **kwargs):
-    model = ResNet(num_classes, BasicBlock, [2, 2, 2, 2], **kwargs).to(device)
+    model = ResNet(num_classes, BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18'], model_dir='.'), strict=False)
     return model

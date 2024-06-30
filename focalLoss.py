@@ -36,9 +36,9 @@ class FocalLoss(nn.Module):
 
         for j in range(batch_size):
 
-            classification = classifications[j, :, :].to(device)
-            regression = regressions[j, :, :].to(device)
-            bbox_annotation = annotations[j, :, :].to(device)
+            classification = classifications[j, :, :]
+            regression = regressions[j, :, :]
+            bbox_annotation = annotations[j, :, :]
             bbox_annotation = bbox_annotation[bbox_annotation[:, 4] != -1]
 
             classification = torch.clamp(classification, 1e-4, 1.0 - 1e-4)
@@ -62,7 +62,7 @@ class FocalLoss(nn.Module):
 
             IoU_max, IoU_argmax = torch.max(IoU, dim=1)
 
-            targets = torch.ones(classification.shape).to(device) * -1
+            targets = torch.ones(classification.shape) * -1
             targets = targets.to(device)
             targets[torch.lt(IoU_max, 0.4), :] = 0
 
@@ -83,7 +83,7 @@ class FocalLoss(nn.Module):
             bce = -(targets * torch.log(classification) + (1.0 - targets) * torch.log(1.0 - classification))
 
             cls_loss = focal_weight * bce
-
+            cls_loss = torch.where(torch.ne(targets, -1.0), cls_loss, torch.zeros(cls_loss.shape).to(device))
             classification_losses.append(cls_loss.sum() / torch.clamp(num_positive_anchors.to(torch.float32), min=1.0))
 
             if positive_indices.sum() > 0:
