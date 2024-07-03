@@ -10,12 +10,16 @@ from pycocotools.coco import COCO
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, root, set_name='train2017', transform=None):
+    def __init__(self, root, set_name='train2017', transform=None, fraction=1.0):
         self.root = root
         self.set_name = set_name
         self.transform = transform
         self.coco = COCO(os.path.join(self.root, 'annotations', f'instances_{self.set_name}.json'))
         self.ids = self.coco.getImgIds()
+
+        if fraction < 1.0:
+            num_ids = int(len(self.ids) * fraction)
+            self.ids = self.ids[:num_ids]
     
         self.load_classes()
 
@@ -37,10 +41,6 @@ class CocoDataset(Dataset):
     def load_image(self, image_index):
         image_info = self.coco.loadImgs(self.ids[image_index])[0]
         path       = os.path.join(self.root, self.set_name, image_info['file_name'])
-        # img = skimage.io.imread(path)
-        # if len(img.shape) == 2:
-        #     img = skimage.color.gray2rgb(img)
-        # return img.astype(np.float32)/255.0
         img = cv2.imread(path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if len(img.shape) == 2:
@@ -62,7 +62,6 @@ class CocoDataset(Dataset):
             annotation[0, 4]  = self.coco_label_to_label(a['category_id'])
             annotations       = np.append(annotations, annotation, axis=0)
 
-        # transform from [x, y, w, h] to [x1, y1, x2, y2]
         annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
         annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
 
