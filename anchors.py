@@ -93,6 +93,7 @@ class Anchors(nn.Module):
 
         return torch.from_numpy(anchors_all.astype(np.float32)).to(device) 
 
+
 class BoundingBoxTransform(nn.Module):
     def __init__(self, mean=None, std=None):
         super(BoundingBoxTransform, self).__init__()
