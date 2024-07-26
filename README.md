@@ -34,6 +34,7 @@ The Focal Loss function addresses the class imbalance during training. It modifi
 
 Focal Loss is defined as:
 \[ FL(p_t) = -\alpha_t (1 - p_t)^\gamma \log(p_t) \]
+
 where:
 - \( p_t \) is the model's estimated probability for the true class.
 - \( \alpha_t \) balances the importance of positive/negative examples.
