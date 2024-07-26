@@ -1,4 +1,4 @@
-# Implementation of RetinaNet
+# RetinaNet
 
 ## Introduction
 This README provides an overview of the project report on the implementation of RetinaNet, a state-of-the-art object detection model based on deep learning. The project involved training RetinaNet on the MSCOCO dataset with the goal of achieving high accuracy in detecting objects in images.
